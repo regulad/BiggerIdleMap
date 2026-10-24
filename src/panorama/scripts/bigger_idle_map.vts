@@ -1,0 +1,98 @@
+"use strict";
+// biggerIdleMap: decides when the minimap is enlarged.
+//
+// The minimap is enlarged (class biggerIdleMapEnlarged on #minimap_persp, styled by
+// bigger_idle_map.css) unless
+//   - the engine says we're in combat: gInCombat, which a GlobalClassListener added to hud.xml
+//     mirrors onto #minimap_persp,
+//   - the scoreboard is open (Tab, which also frees the mouse for the minimap): gScoreboardOpen,
+//     mirrored by the same listener,
+//   - the gun is zoomed (ADS): isZoomed on #health_and_abilities_container, or
+//   - the gun is reloading: reloading on the crosshair's gun element (or an ancestor of it).
+// CSS can't see the last two from the minimap (they are on unrelated panels and there are no global
+// classes for them), so this polls them. Until the first poll the HUD is vanilla, so if this script
+// ever breaks the minimap just keeps its normal size.
+(function () {
+    var POLL_SECONDS = 0.05;
+    var GUN_RESCAN_POLLS = 40;   // re-find the gun elements every ~2s: they are rebuilt on hero swaps
+    var MAX_GUN_DEPTH = 8;       // gun element -> #crosshair is a few levels; cap the ancestor walk
+
+    var hud = $.GetContextPanel();
+    var persp = null;
+    var health = null;
+    var crosshair = null;
+    var guns = [];
+    var pollsUntilRescan = 0;
+    var reportedError = false;
+
+    function alive(panel) {
+        return panel !== null && panel !== undefined && panel.IsValid();
+    }
+
+    function find(id) {
+        var panel = hud.FindChildTraverse(id);
+        return alive(panel) ? panel : null;
+    }
+
+    function collectGuns(panel, out) {
+        for (var i = 0; i < panel.GetChildCount(); i++) {
+            var child = panel.GetChild(i);
+            if (child.BHasClass("ability_element_gun")) {
+                out.push(child);
+            } else {
+                collectGuns(child, out);
+            }
+        }
+    }
+
+    function reloading() {
+        for (var i = 0; i < guns.length; i++) {
+            var panel = guns[i];
+            for (var depth = 0; depth < MAX_GUN_DEPTH && alive(panel); depth++) {
+                if (panel.BHasClass("reloading")) {
+                    return true;
+                }
+                if (panel.id === "crosshair") {
+                    break;
+                }
+                panel = panel.GetParent();
+            }
+        }
+        return false;
+    }
+
+    function poll() {
+        if (!alive(persp)) persp = find("minimap_persp");
+        if (!alive(health)) health = find("health_and_abilities_container");
+        if (!alive(crosshair)) {
+            crosshair = find("crosshair");
+            pollsUntilRescan = 0;
+        }
+        if (crosshair !== null && --pollsUntilRescan <= 0) {
+            guns = [];
+            collectGuns(crosshair, guns);
+            pollsUntilRescan = GUN_RESCAN_POLLS;
+        }
+        if (persp === null) return;
+
+        var normal = persp.BHasClass("gInCombat")
+            || persp.BHasClass("gScoreboardOpen")
+            || (health !== null && health.BHasClass("isZoomed"))
+            || reloading();
+        persp.SetHasClass("biggerIdleMapEnlarged", !normal);
+    }
+
+    function loop() {
+        try {
+            poll();
+        } catch (e) {
+            if (!reportedError) {
+                reportedError = true;
+                $.Msg("[biggerIdleMap] " + e);
+            }
+        }
+        $.Schedule(POLL_SECONDS, loop);
+    }
+
+    loop();
+})();

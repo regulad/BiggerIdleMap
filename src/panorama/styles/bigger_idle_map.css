@@ -1,0 +1,19 @@
+/* biggerIdleMap: while you're not fighting, the minimap is much larger.
+ *
+ * scripts/bigger_idle_map.vts puts biggerIdleMapEnlarged on #minimap_persp whenever we are not in
+ * combat, in the scoreboard, zoomed or reloading, so every rule here is scoped to
+ * #minimap_persp.biggerIdleMapEnlarged.
+ * Without the class none of them match and the vanilla minimap rules in hud.css / hud_minimap.css
+ * apply.
+ *
+ * .HudCore is the gameplay HUD root, an ancestor of #minimap_persp. It is only here so these
+ * selectors outrank the vanilla ones.
+ */
+
+/* Scale the whole minimap widget as one unit (map, background art, compass frame, district label,
+ * control hints), so everything keeps its vanilla proportions and it stays anchored in the
+ * bottom-right corner. The value is filled in by build.py (--scale). */
+.HudCore #minimap_persp.biggerIdleMapEnlarged
+{
+	ui-scale: {{PERSP_UI_SCALE}};
+}

@@ -1,0 +1,4 @@
+repository:
+  name: BiggerIdleMap
+  description: "Make the map larger outside of combat in Valve Software's Deadlock"
+  topics: deadlock, deadlock-mod, valve, source2, panorama, hud, minimap, gamebanana, game-mod
