@@ -1,4 +1,14 @@
+# Repository configuration, managed by the Settings app
+# (https://github.com/repository-settings/app). The shared defaults come from
+# regulad/.github; this file sets only what is this repository's own.
+_extends: .github
+
 repository:
   name: BiggerIdleMap
-  description: "Make the map larger outside of combat in Valve Software's Deadlock"
+  description: >-
+    Make the map larger outside of combat in Valve Software's Deadlock
+  homepage: ""
+  private: false
+  # Topics: comma-and-space separated string, NOT a YAML list.
   topics: deadlock, deadlock-mod, valve, source2, panorama, hud, minimap, gamebanana, game-mod
+  default_branch: main
